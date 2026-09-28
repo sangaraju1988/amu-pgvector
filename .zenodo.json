@@ -1,0 +1,35 @@
+{
+  "title": "amu-pgvector: PostgreSQL + pgvector reference implementation of Lineage-Aware Memory Governance",
+  "description": "Reference implementation of Lineage-Aware Memory Governance (Sangaraju & Vissa, IEEE Access, DOI 10.1109/ACCESS.2026.3730363) on PostgreSQL + pgvector. Postgres row-level security enforces S(a) subset P(d) -- an agent may reuse a cached analytical result only if every sensitive column in its derivation lineage is in the requester's permitted set -- as a database-level gate, not an application-side filter.",
+  "creators": [
+    {
+      "name": "Sangaraju, Venkata",
+      "affiliation": ""
+    }
+  ],
+  "upload_type": "software",
+  "access_right": "open",
+  "license": "MIT",
+  "related_identifiers": [
+    {
+      "identifier": "10.1109/ACCESS.2026.3730363",
+      "relation": "isSupplementTo",
+      "resource_type": "publication-article"
+    },
+    {
+      "identifier": "https://github.com/sangaraju1988/amu-governance",
+      "relation": "isDerivedFrom",
+      "resource_type": "software"
+    }
+  ],
+  "keywords": [
+    "postgresql",
+    "pgvector",
+    "row-level-security",
+    "ai-agents",
+    "data-governance",
+    "access-control",
+    "vector-database",
+    "retrieval-augmented-generation"
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "git_sha": "bdef404a67f9696e6109fba1bdbf7558b5d88d67",
+  "hardware": {
+    "docker_vm_cpu_count": 10,
+    "docker_vm_memory_gb": 7.8,
+    "host_cpu_count": 10,
+    "host_memory_gb": 24.0,
+    "platform": "macOS-26.6.2-arm64-arm-64bit",
+    "processor": "arm",
+    "python_version": "3.11.15"
+  },
+  "parameters": {
+    "embedding_dim": 1536,
+    "k": 10,
+    "n_amus": 20000,
+    "n_queries": 100,
+    "seed": 0,
+    "visible_fractions": [
+      0.5,
+      0.1,
+      0.01
+    ]
+  },
+  "pgvector_version": "0.8.6",
+  "postgres_version": "17.11 (Debian 17.11-1.pgdg12+2)",
+  "timestamp_utc": "2026-09-28T11:56:10.701311+00:00"
+}

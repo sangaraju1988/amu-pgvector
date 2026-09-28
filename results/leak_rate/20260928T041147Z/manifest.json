@@ -1,0 +1,52 @@
+{
+  "git_sha": "bdef404a67f9696e6109fba1bdbf7558b5d88d67",
+  "hardware": {
+    "docker_vm_cpu_count": 10,
+    "docker_vm_memory_gb": 7.8,
+    "host_cpu_count": 10,
+    "host_memory_gb": 24.0,
+    "platform": "macOS-26.6.2-arm64-arm-64bit",
+    "processor": "arm",
+    "python_version": "3.11.15"
+  },
+  "parameters": {
+    "department_permissions": {
+      "Finance": [
+        "amount",
+        "customer_id",
+        "email",
+        "income",
+        "region",
+        "ssn",
+        "txn_id"
+      ],
+      "Marketing": [
+        "amount",
+        "customer_id",
+        "region",
+        "txn_id"
+      ],
+      "Support": [
+        "customer_id",
+        "region"
+      ]
+    },
+    "departments": [
+      "Finance",
+      "Marketing",
+      "Support"
+    ],
+    "n_metrics": 60,
+    "n_requests": 2000,
+    "seed": 0,
+    "sensitive_columns": [
+      "income",
+      "ssn",
+      "email"
+    ],
+    "writes_per_metric": 10
+  },
+  "pgvector_version": "0.8.6",
+  "postgres_version": "17.11 (Debian 17.11-1.pgdg12+2)",
+  "timestamp_utc": "2026-09-28T04:11:47.793534+00:00"
+}

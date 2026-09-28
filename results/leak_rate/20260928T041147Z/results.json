@@ -1,0 +1,16 @@
+{
+  "gated": {
+    "leak_rate": 0.0,
+    "leaks": 0,
+    "served": 990
+  },
+  "n_amus_written": 600,
+  "n_metrics": 60,
+  "n_requests": 2000,
+  "naive": {
+    "leak_rate": 0.505,
+    "leaks": 1010,
+    "served": 2000
+  },
+  "writes_per_metric": 10
+}

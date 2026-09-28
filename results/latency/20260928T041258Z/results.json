@@ -1,0 +1,32 @@
+{
+  "conditions": {
+    "rls_off_iterative_off": {
+      "mean_ms": 49.46,
+      "n": 200,
+      "p50_ms": 49.219,
+      "p95_ms": 52.324
+    },
+    "rls_off_iterative_on": {
+      "mean_ms": 20.016,
+      "n": 200,
+      "p50_ms": 19.467,
+      "p95_ms": 21.808
+    },
+    "rls_on_iterative_off": {
+      "mean_ms": 81.791,
+      "n": 200,
+      "p50_ms": 81.851,
+      "p95_ms": 88.247
+    },
+    "rls_on_iterative_on": {
+      "mean_ms": 67.034,
+      "n": 200,
+      "p50_ms": 66.752,
+      "p95_ms": 70.16
+    }
+  },
+  "k": 10,
+  "n_amus": 10000,
+  "visible_fraction": 0.5,
+  "wall_clock_seconds": 64.1
+}

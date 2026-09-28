@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite both the software and the paper it implements."
+title: "amu-pgvector: PostgreSQL + pgvector reference implementation of Lineage-Aware Memory Governance"
+authors:
+  - family-names: Sangaraju
+    given-names: Venkata
+version: 0.1.0
+date-released: 2026-09-28
+repository-code: "https://github.com/sangaraju1988/amu-pgvector"
+license: MIT
+type: software
+preferred-citation:
+  type: article
+  title: "Lineage-Aware Memory Governance: A Derivation-Gated Framework for Privacy-Preserving Column-Level Access Control in Enterprise AI Agents"
+  authors:
+    - family-names: Sangaraju
+      given-names: Venkata
+    - family-names: Vissa
+      given-names: Sudhir
+  year: 2026
+  journal: "IEEE Access"
+  doi: 10.1109/ACCESS.2026.3730363
+  url: "https://doi.org/10.1109/ACCESS.2026.3730363"
+  notes: "Early Access"

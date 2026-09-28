@@ -1,0 +1,140 @@
+"""Generates results/SUMMARY.md from the actual run folders under results/
+-- the README must quote only from this file, and this file must quote
+only from committed results/<benchmark>/<timestamp>/results.json +
+manifest.json runs. Never hand-edit numbers into SUMMARY.md.
+
+Usage: uv run python benchmarks/generate_summary.py
+"""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+RESULTS_DIR = REPO_ROOT / "results"
+
+
+def latest_run(benchmark: str) -> Path | None:
+    base = RESULTS_DIR / benchmark
+    if not base.exists():
+        return None
+    runs = sorted(p for p in base.iterdir() if p.is_dir())
+    return runs[-1] if runs else None
+
+
+def load(run_dir: Path) -> tuple[dict, dict]:
+    results = json.loads((run_dir / "results.json").read_text())
+    manifest = json.loads((run_dir / "manifest.json").read_text())
+    return results, manifest
+
+
+def render_leak_rate() -> str:
+    run_dir = latest_run("leak_rate")
+    if run_dir is None:
+        return "_Not yet run._\n"
+    results, manifest = load(run_dir)
+    lines = [
+        f"Run: `{run_dir.relative_to(REPO_ROOT)}` "
+        f"(git `{manifest['git_sha'][:12]}`, {manifest['timestamp_utc']}, "
+        f"PG {manifest['postgres_version']}, pgvector {manifest['pgvector_version']})",
+        "",
+        f"{results['n_requests']} requests over {results['n_amus_written']} synthetic AMUs "
+        f"({results['n_metrics']} metrics x {results['writes_per_metric']} writes each), "
+        "Marketing/Support departments requesting metrics that may or may not touch a "
+        "sensitive column only Finance is permitted:",
+        "",
+        "| Condition | Served | Cross-department leaks | Leak rate |",
+        "|---|---|---|---|",
+        f"| Naive (content-gated, no lineage check) | {results['naive']['served']} | "
+        f"{results['naive']['leaks']} | {results['naive']['leak_rate']:.1%} |",
+        f"| amu-pgvector (RLS-gated) | {results['gated']['served']} | "
+        f"{results['gated']['leaks']} | {results['gated']['leak_rate']:.1%} |",
+    ]
+    return "\n".join(lines) + "\n"
+
+
+def render_latency() -> str:
+    base = RESULTS_DIR / "latency"
+    if not base.exists():
+        return "_Not yet run._\n"
+    runs = sorted(p for p in base.iterdir() if p.is_dir())
+    if not runs:
+        return "_Not yet run._\n"
+
+    by_n: dict[int, tuple[dict, dict]] = {}
+    for run_dir in runs:
+        results, manifest = load(run_dir)
+        by_n[results["n_amus"]] = (results, manifest)
+
+    lines = []
+    for n in sorted(by_n):
+        results, manifest = by_n[n]
+        run_dir_name = next(r.name for r in runs if load(r)[0]["n_amus"] == n)
+        lines.append(
+            f"### n = {n:,} AMUs\n\n"
+            f"Run: `results/latency/{run_dir_name}` (git `{manifest['git_sha'][:12]}`, "
+            f"{manifest['timestamp_utc']}, PG {manifest['postgres_version']}, "
+            f"pgvector {manifest['pgvector_version']}), k={results['k']}, "
+            f"visible_fraction={results['visible_fraction']}, "
+            f"{results['conditions']['rls_on_iterative_on']['n']} queries per condition\n"
+        )
+        lines.append("| Condition | p50 (ms) | p95 (ms) | mean (ms) |")
+        lines.append("|---|---|---|---|")
+        label = {
+            "rls_on_iterative_on": "RLS on, iterative scan on (amu.search())",
+            "rls_on_iterative_off": "RLS on, iterative scan off",
+            "rls_off_iterative_on": "RLS off, iterative scan on",
+            "rls_off_iterative_off": "RLS off, iterative scan off",
+        }
+        for key in [
+            "rls_on_iterative_on",
+            "rls_on_iterative_off",
+            "rls_off_iterative_on",
+            "rls_off_iterative_off",
+        ]:
+            c = results["conditions"][key]
+            lines.append(f"| {label[key]} | {c['p50_ms']} | {c['p95_ms']} | {c['mean_ms']} |")
+        lines.append("")
+    return "\n".join(lines)
+
+
+def render_recall() -> str:
+    run_dir = latest_run("recall")
+    if run_dir is None:
+        return "_Not yet run._\n"
+    results, manifest = load(run_dir)
+    lines = [
+        f"Run: `{run_dir.relative_to(REPO_ROOT)}` "
+        f"(git `{manifest['git_sha'][:12]}`, {manifest['timestamp_utc']}, "
+        f"PG {manifest['postgres_version']}, pgvector {manifest['pgvector_version']}), "
+        f"n={manifest['parameters']['n_amus']:,} AMUs, k={manifest['parameters']['k']}",
+        "",
+        "| Visible fraction | recall@k (mean) | recall@k (min) |",
+        "|---|---|---|",
+    ]
+    for row in results:
+        lines.append(
+            f"| {row['visible_fraction']:.0%} (~{row['n_visible_approx']:,} visible rows) | "
+            f"{row['recall_at_k_mean']:.1%} | {row['recall_at_k_min']:.1%} |"
+        )
+    return "\n".join(lines) + "\n"
+
+
+def main() -> None:
+    sections = [
+        "# Benchmark summary\n",
+        "Generated by `benchmarks/generate_summary.py` from the run folders under "
+        "`results/`. Every number here traces back to a committed `results.json` + "
+        "`manifest.json` pair -- nothing here is hand-typed. Re-run the corresponding "
+        "`benchmarks/*.py` script and re-run this generator to update.\n",
+        "## Leak rate\n\n" + render_leak_rate(),
+        "## Latency\n\n" + render_latency(),
+        "## Filtered recall\n\n" + render_recall(),
+    ]
+    (RESULTS_DIR / "SUMMARY.md").write_text("\n".join(sections) + "\n")
+    print(f"Wrote {RESULTS_DIR / 'SUMMARY.md'}")
+
+
+if __name__ == "__main__":
+    main()

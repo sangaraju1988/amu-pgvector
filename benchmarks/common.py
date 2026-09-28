@@ -19,7 +19,6 @@ from pathlib import Path
 
 import numpy as np
 import psycopg
-from pgvector.psycopg import register_vector
 from psycopg import sql
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -249,7 +248,10 @@ def seed_workload(
 
     admin = psycopg.connect(db["dsn"], autocommit=True)
     with admin.cursor() as cur:
-        cur.execute("INSERT INTO amu.sensitive_columns (column_id) VALUES (%s) ON CONFLICT DO NOTHING", (SENSITIVE_COLUMN,))
+        cur.execute(
+            "INSERT INTO amu.sensitive_columns (column_id) VALUES (%s) ON CONFLICT DO NOTHING",
+            (SENSITIVE_COLUMN,),
+        )
         for dept in DEPARTMENTS:
             cur.execute(
                 "INSERT INTO amu.department_permissions (department, column_id) VALUES (%s, %s) "

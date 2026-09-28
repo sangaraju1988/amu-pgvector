@@ -1,0 +1,32 @@
+[
+  {
+    "k": 10,
+    "n_amus": 20000,
+    "n_queries": 100,
+    "n_visible_approx": 10000,
+    "recall_at_k_mean": 1.0,
+    "recall_at_k_min": 1.0,
+    "visible_fraction": 0.5,
+    "wall_clock_seconds": 146.3
+  },
+  {
+    "k": 10,
+    "n_amus": 20000,
+    "n_queries": 100,
+    "n_visible_approx": 2000,
+    "recall_at_k_mean": 1.0,
+    "recall_at_k_min": 1.0,
+    "visible_fraction": 0.1,
+    "wall_clock_seconds": 132.5
+  },
+  {
+    "k": 10,
+    "n_amus": 20000,
+    "n_queries": 100,
+    "n_visible_approx": 200,
+    "recall_at_k_mean": 1.0,
+    "recall_at_k_min": 1.0,
+    "visible_fraction": 0.01,
+    "wall_clock_seconds": 128.2
+  }
+]
