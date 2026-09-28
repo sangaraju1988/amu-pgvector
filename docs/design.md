@@ -184,3 +184,66 @@ correct on paper but isn't:
   hits this directly, since it spins up multiple ephemeral databases against
   one shared Postgres instance per session -- see
   `packages/amu-pgvector/tests/conftest.py`'s `_grant_admin_on_shared_roles`.)
+
+## Phase 4 additions (langchain-amu + MCP server)
+
+- **`external_id text` column** (nullable, partial `UNIQUE` index `WHERE
+  external_id IS NOT NULL`) added to `memory_units`, plus writer UPDATE/
+  DELETE RLS policies and grants. Needed because LangChain's `VectorStore`
+  contract expects caller-supplied, arbitrary string ids (not necessarily
+  UUIDs) with upsert-by-id and delete-by-id semantics; `memory_units.id`
+  stays a real `uuid` PK throughout the rest of the system (SQL, MCP,
+  direct Python use). `amu.search()` was extended (via `DROP FUNCTION` +
+  recreate, since `CREATE OR REPLACE` can't change `RETURNS TABLE`'s column
+  set) to also return `external_id`.
+- **`close_lineage()` empty-lineage bug, found and fixed while building
+  `add_texts()`**: `array_agg()` over zero candidate rows is SQL `NULL`,
+  which the function's own NULL-means-unresolved convention would
+  misinterpret as a cycle/depth-exceeded failure. A genuinely empty
+  lineage (no SQL behind a piece of text at all -- exactly what
+  `AMUVectorStore.add_texts()` produces when metadata carries no `sql` key)
+  must resolve to `'{}'`, not come back hidden. Fixed with `COALESCE`;
+  regression test in `test_closure.py`.
+- **`langchain_amu.AMUVectorStore`'s `Document.metadata` cannot satisfy
+  LangChain's generic standard-suite contract byte-for-byte.** Every AMU
+  must expose `metric_name`/`owner_department`/`definition_hash` in
+  metadata (the whole point of the project), but `langchain-tests`'
+  `VectorStoreIntegrationTests` assumes a store that echoes back exactly
+  the metadata dict it was given and nothing more. These are structurally
+  incompatible for a handful of exact-equality assertions (~8 test
+  methods: add/get/delete/mutate-by-id). Resolution: the caller's original
+  metadata is preserved (nested under `value._metadata` server-side, merged
+  back into `Document.metadata` on read) rather than discarded, and the 8
+  affected standard-suite tests are overridden with
+  `@pytest.mark.xfail(strict=True, reason=...)` in
+  `packages/langchain-amu/tests/test_standard.py` -- documented, not
+  silently skipped. Content/id/add/delete/mutate/search functionality
+  itself all genuinely works, proven by `test_gating.py` and
+  `amu-pgvector/tests/test_store.py`'s equivalent scenarios.
+- **MCP SDK major-version jump mid-project**: the `mcp` PyPI package's 2.x
+  line renamed `FastMCP` (`mcp.server.fastmcp`) to `MCPServer`
+  (`mcp.server.mcpserver`) with a different constructor/decorator surface.
+  `amu_pgvector/mcp_server.py` targets `mcp>=2.0` (`MCPServer`) since that's
+  what actually resolves from the `mcp>=1.2` bound originally sketched in
+  the spec; the pyproject extra now pins `mcp>=2.0` explicitly.
+- **pytest-asyncio needed `asyncio_mode = "auto"`** (root `pyproject.toml`)
+  for `langchain-tests`' async test methods to reach their own internal
+  `if not self.has_async: pytest.skip(...)` guard at all -- in `strict`
+  mode (the plugin's default), an unmarked `async def` test isn't invoked
+  as a coroutine in the first place, so it errors before that guard runs.
+- **Cross-package test fixture reuse.** `packages/langchain-amu/tests/`
+  loads `packages/amu-pgvector/tests/conftest.py` via `importlib` under an
+  explicit distinct module name (both files share the basename `conftest`,
+  which breaks a plain `from conftest import ...`) rather than duplicating
+  the ephemeral-database fixtures. This surfaced a real bug: the session-
+  scoped `test_database` fixture is instantiated once *per conftest.py
+  registration*, not once per pytest process, so two packages' test
+  sessions can have two independent ephemeral databases alive
+  simultaneously, both sharing the cluster-global `amu_writer`/
+  `amu_agent_base` role names (see the note above). Fixed by never dropping
+  those two roles from any instance's teardown (they're harmless, data-free
+  group roles -- safe to just leave for the life of the Postgres process)
+  and by running the per-test `t_role_*` cleanup as the superuser admin
+  connection instead of the ephemeral owner role, since a stale role
+  created by a *different* instance's owner isn't one this instance has
+  ADMIN OPTION over.

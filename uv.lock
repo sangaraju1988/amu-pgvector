@@ -59,7 +59,7 @@ st = [
 [package.metadata]
 requires-dist = [
     { name = "amu-governance", specifier = "==0.1.2" },
-    { name = "mcp", marker = "extra == 'mcp'", specifier = ">=1.2" },
+    { name = "mcp", marker = "extra == 'mcp'", specifier = ">=2.0" },
     { name = "pgvector", specifier = ">=0.3" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.1" },
     { name = "psycopg", extras = ["binary", "pool"], marker = "extra == 'async'", specifier = ">=3.1" },
@@ -820,6 +820,9 @@ source = { editable = "packages/langchain-amu" }
 dependencies = [
     { name = "amu-pgvector" },
     { name = "langchain-core" },
+    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.11.*'" },
+    { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
 ]
 
 [package.optional-dependencies]
@@ -832,6 +835,7 @@ requires-dist = [
     { name = "amu-pgvector", editable = "packages/amu-pgvector" },
     { name = "langchain-core", specifier = ">=0.3" },
     { name = "langchain-tests", marker = "extra == 'test'", specifier = ">=0.3" },
+    { name = "numpy", specifier = ">=1.26" },
 ]
 provides-extras = ["test"]
 

@@ -39,6 +39,20 @@ def test_chain_within_default_max_depth_resolves(db, hops):
     assert result == ["x"]
 
 
+def test_empty_lineage_resolves_to_empty_array_not_unresolved(db):
+    """array_agg() over zero candidate rows is NULL in plain SQL -- that
+    must not be confused with the NULL close_lineage() uses to signal
+    'unresolved' (cycle/depth-exceeded). A genuinely empty lineage (no SQL
+    steps at all, e.g. a document added with no query behind it) touches
+    no columns and must resolve cleanly to '{}', not come back hidden."""
+    admin = psycopg.connect(db["dsn"], autocommit=True)
+    with admin.cursor() as cur:
+        cur.execute("SELECT amu.close_lineage(%s::jsonb)", ('{"steps":[],"filter_logic":""}',))
+        result = cur.fetchone()[0]
+    admin.close()
+    assert result == []
+
+
 def test_chain_exceeding_default_max_depth_is_unresolved(db):
     admin = psycopg.connect(db["dsn"], autocommit=True)
     with admin.cursor() as cur:

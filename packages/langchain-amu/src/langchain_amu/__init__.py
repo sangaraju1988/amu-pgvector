@@ -1,6 +1,8 @@
-"""langchain-amu: LangChain VectorStore/Retriever backed by amu-pgvector.
+"""langchain-amu: LangChain VectorStore/Retriever backed by amu-pgvector."""
 
-Implementation to follow in Phase 4 (Integrations).
-"""
+from langchain_amu.retriever import AMURetriever
+from langchain_amu.vectorstore import AMUVectorStore
 
 __version__ = "0.1.0"
+
+__all__ = ["AMUVectorStore", "AMURetriever"]

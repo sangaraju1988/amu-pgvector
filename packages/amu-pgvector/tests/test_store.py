@@ -126,6 +126,78 @@ def test_admin_create_agent_role_wires_up_permitted_columns(db, owner_store):
         assert cur.fetchone()[0] == ["ssn"]
 
 
+def test_record_with_external_id_upserts_in_place(db, writer_store):
+    first = writer_store.record(
+        "SELECT count(*) FROM signups",
+        {"count": 1},
+        metric_name="signup_count",
+        description="v1 of the description",
+        owner_department="Marketing",
+        embed_fn=EMBED,
+        external_id="doc-1",
+    )
+    second = writer_store.record(
+        "SELECT count(*) FROM signups",
+        {"count": 2},
+        metric_name="signup_count",
+        description="v2 of the description",
+        owner_department="Marketing",
+        embed_fn=EMBED,
+        external_id="doc-1",
+    )
+    assert first.amu_id == second.amu_id  # same row, upserted, not duplicated
+
+    admin = psycopg.connect(db["dsn"], autocommit=True)
+    with admin.cursor() as cur:
+        cur.execute("SELECT count(*) FROM amu.memory_units WHERE external_id = 'doc-1'")
+        assert cur.fetchone()[0] == 1
+        cur.execute("SELECT description, value FROM amu.memory_units WHERE external_id = 'doc-1'")
+        description, value = cur.fetchone()
+        assert description == "v2 of the description"
+        assert value == {"count": 2}
+    admin.close()
+
+
+def test_delete_and_get_by_external_ids(db, writer_store):
+    writer_store.record(
+        "SELECT count(*) FROM signups",
+        {"count": 1},
+        metric_name="signup_count",
+        description="d1",
+        owner_department="Marketing",
+        embed_fn=EMBED,
+        external_id="del-1",
+    )
+    assert len(writer_store.get_by_external_ids(["del-1"])) == 1
+
+    writer_store.delete_by_external_ids(["del-1"])
+    assert writer_store.get_by_external_ids(["del-1"]) == []
+
+    # Deleting something already gone must not raise.
+    writer_store.delete_by_external_ids(["del-1", "never-existed"])
+
+
+def test_get_by_external_ids_is_gated(db, owner_store, writer_store, make_agent):
+    owner_store.register_sensitive_column("income")
+    owner_store.grant_department_permission("Finance", "income")
+
+    writer_store.record(
+        "SELECT avg(income) FROM customers",
+        {"avg": 1},
+        metric_name="avg_income",
+        description="gated",
+        owner_department="Finance",
+        embed_fn=EMBED,
+        external_id="gated-1",
+    )
+
+    _, mkt_dsn = make_agent("Marketing")
+    assert AMUStore(mkt_dsn).get_by_external_ids(["gated-1"]) == []
+
+    _, fin_dsn = make_agent("Finance")
+    assert len(AMUStore(fin_dsn).get_by_external_ids(["gated-1"])) == 1
+
+
 def test_admin_register_materialization_edge_feeds_closure(db, owner_store, writer_store):
     owner_store.register_sensitive_column("ssn")
     owner_store.grant_department_permission("Finance", "ssn")

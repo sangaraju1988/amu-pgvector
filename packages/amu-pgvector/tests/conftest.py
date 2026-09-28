@@ -165,27 +165,46 @@ def test_database(admin_conn_info):
         cur.execute(f'DROP DATABASE IF EXISTS "{db_name}" WITH (FORCE)')
         cur.execute(f'DROP ROLE IF EXISTS "{owner_role}"')
         # amu_writer/amu_agent_base are cluster-global roles (like all
-        # Postgres roles), created fresh by the install script above. Drop
-        # them too so the next test session's install creates them fresh
-        # and its own ephemeral owner gets the auto-granted ADMIN OPTION on
-        # them -- otherwise a second session would find them pre-existing
-        # (skipped by the script's own IF NOT EXISTS guard) and never be
-        # able to GRANT membership in them to its writer/agent test roles.
-        cur.execute("DROP ROLE IF EXISTS amu_writer")
-        cur.execute("DROP ROLE IF EXISTS amu_agent_base")
+        # Postgres roles) and, deliberately, NOT dropped here: more than one
+        # `test_database` instance can be alive at once in the same pytest
+        # process (e.g. langchain-amu's tests reuse this fixture from a
+        # separate conftest.py registration, which pytest treats as its own
+        # independent session-scoped instance) -- whichever one tears down
+        # first must not pull these two shared roles out from under a
+        # sibling instance's still-live database. They're harmless, empty
+        # group roles with no data of their own; leaving them for the life
+        # of the Postgres process (a fresh container in CI, or manually via
+        # `DROP ROLE amu_writer, amu_agent_base` locally) is the safe
+        # default. `_grant_admin_on_shared_roles` below is what makes reusing
+        # a pre-existing pair across instances/sessions safe.
     admin.close()
 
 
 @pytest.fixture()
-def db(test_database):
+def db(test_database, admin_conn_info):
     """Truncate governance/data tables and drop any roles a previous test
-    created, so each test starts from a schema-only, data-empty database."""
+    created, so each test starts from a schema-only, data-empty database.
+
+    Role cleanup runs as the superuser admin connection, not the ephemeral
+    owner_role: t_role_* is a cluster-global namespace shared with any
+    sibling `test_database` instance alive elsewhere in this same pytest
+    process (see the comment in test_database's teardown above), so a
+    stale role this instance's own owner_role didn't create itself (and
+    therefore has no ADMIN OPTION on) can still turn up in the LIKE scan --
+    only the superuser can unconditionally drop those.
+    """
     conn = psycopg.connect(test_database["dsn"], autocommit=True)
     with conn.cursor() as cur:
         cur.execute("TRUNCATE " + ", ".join(DATA_TABLES) + " CASCADE")
+    conn.close()
+
+    admin = psycopg.connect(**admin_conn_info, autocommit=True)
+    with admin.cursor() as cur:
         cur.execute("SELECT rolname FROM pg_roles WHERE rolname LIKE 't\\_role\\_%' ESCAPE '\\'")
         for (rolname,) in cur.fetchall():
             cur.execute(f'DROP ROLE IF EXISTS "{rolname}"')
+    admin.close()
+    return test_database
     conn.close()
     return test_database
 

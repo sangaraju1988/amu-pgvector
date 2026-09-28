@@ -1,0 +1,35 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.sangaraju1988/amu-pgvector",
+  "title": "amu-pgvector",
+  "description": "Lineage-gated agent memory on PostgreSQL + pgvector: search/record/check-conflict tools whose results are gated by Postgres row-level security, not application code.",
+  "repository": {
+    "url": "https://github.com/sangaraju1988/amu-pgvector",
+    "source": "github"
+  },
+  "version": "0.1.0",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "registryBaseUrl": "https://pypi.org",
+      "identifier": "amu-pgvector[mcp]",
+      "version": "0.1.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "AMU_PGVECTOR_DSN",
+          "description": "Postgres DSN for the role this server runs as. Results are gated by row-level security under this exact role -- use an amu_writer-member role for amu_record/amu_check_conflict, or an amu_agent_base-member role for read-only amu_search.",
+          "isRequired": true,
+          "isSecret": true
+        },
+        {
+          "name": "AMU_PGVECTOR_EMBEDDING_DIM",
+          "description": "Embedding vector dimension, used only by the built-in deterministic fallback embedder when sentence-transformers (the amu-pgvector[st] extra) isn't installed. Must match the dimension sql/amu_pgvector.sql was installed with. Default: 1536.",
+          "isRequired": false
+        }
+      ]
+    }
+  ]
+}

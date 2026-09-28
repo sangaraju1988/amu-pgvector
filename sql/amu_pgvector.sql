@@ -107,6 +107,16 @@ CREATE TABLE IF NOT EXISTS amu.memory_units (
         CHECK (lineage_status IN ('resolved', 'unresolved'))
 );
 
+-- Added after the initial release; ADD COLUMN IF NOT EXISTS keeps a
+-- from-scratch install and an upgrade of an already-installed database
+-- both idempotent. Caller-supplied correlation id (e.g. langchain-amu's
+-- external document ids) -- NULL for AMUs written directly through
+-- AMUStore.record(), which has no notion of an external id.
+ALTER TABLE amu.memory_units ADD COLUMN IF NOT EXISTS external_id text;
+
+CREATE UNIQUE INDEX IF NOT EXISTS memory_units_external_id_uidx
+    ON amu.memory_units (external_id) WHERE external_id IS NOT NULL;
+
 CREATE INDEX IF NOT EXISTS memory_units_lineage_columns_gin
     ON amu.memory_units USING gin (lineage_columns);
 
@@ -199,7 +209,7 @@ AS $$
     SELECT CASE
         WHEN (SELECT has_cycle FROM cycle_check) OR (SELECT hit_cap FROM depth_cap_check)
             THEN NULL
-        ELSE (SELECT array_agg(DISTINCT column_name) FROM expansion WHERE NOT cyclic)
+        ELSE (SELECT COALESCE(array_agg(DISTINCT column_name), '{}'::text[]) FROM expansion WHERE NOT cyclic)
     END
 $$;
 
@@ -403,7 +413,7 @@ END
 $$;
 
 GRANT USAGE ON SCHEMA amu TO amu_writer, amu_agent_base;
-GRANT INSERT ON amu.memory_units TO amu_writer;
+GRANT INSERT, UPDATE, DELETE ON amu.memory_units TO amu_writer;
 GRANT SELECT ON amu.memory_units TO amu_writer;
 GRANT SELECT ON amu.memory_units TO amu_agent_base;
 
@@ -447,19 +457,41 @@ CREATE POLICY memory_units_writer_select ON amu.memory_units
     TO amu_writer
     USING (true);
 
+-- UPDATE/DELETE: needed for upsert-by-external_id (langchain-amu's
+-- add_documents(..., ids=[...]) mutation/idempotency contract) and
+-- explicit delete(ids=[...]). Still writer-only -- agents never get these.
+DROP POLICY IF EXISTS memory_units_writer_update ON amu.memory_units;
+CREATE POLICY memory_units_writer_update ON amu.memory_units
+    FOR UPDATE
+    TO amu_writer
+    USING (true)
+    WITH CHECK (true);
+
+DROP POLICY IF EXISTS memory_units_writer_delete ON amu.memory_units;
+CREATE POLICY memory_units_writer_delete ON amu.memory_units
+    FOR DELETE
+    TO amu_writer
+    USING (true);
+
 -- =====================================================================
 -- 8. amu.search(): SECURITY INVOKER so RLS applies under the caller's own
 --    role. hnsw.iterative_scan=relaxed_order keeps HNSW returning k rows
 --    even when most rows are hidden by the policy above.
 -- =====================================================================
 
-CREATE OR REPLACE FUNCTION amu.search(
+-- DROP first: CREATE OR REPLACE can't change a function's RETURNS TABLE
+-- column set, and external_id was added to the output after the initial
+-- release -- this keeps upgrading an already-installed database idempotent.
+DROP FUNCTION IF EXISTS amu.search(vector, int, text);
+
+CREATE FUNCTION amu.search(
     p_query_embedding vector,
     p_k int,
     p_metric_name text DEFAULT NULL
 )
 RETURNS TABLE (
     id               uuid,
+    external_id      text,
     metric_name      text,
     description      text,
     value            jsonb,
@@ -473,7 +505,7 @@ SECURITY INVOKER
 SET search_path = amu, public, extensions, pg_catalog
 SET hnsw.iterative_scan = 'relaxed_order'
 AS $$
-    SELECT m.id, m.metric_name, m.description, m.value, m.owner_department,
+    SELECT m.id, m.external_id, m.metric_name, m.description, m.value, m.owner_department,
            m.definition_hash, m.embedding <=> p_query_embedding AS distance
     FROM amu.memory_units m
     WHERE p_metric_name IS NULL OR m.metric_name = p_metric_name

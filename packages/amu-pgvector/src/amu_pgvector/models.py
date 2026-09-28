@@ -33,3 +33,4 @@ class SearchResult:
     owner_department: str
     definition_hash: str
     distance: float
+    external_id: str | None = None
