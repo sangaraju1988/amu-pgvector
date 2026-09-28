@@ -1,0 +1,35 @@
+name: Publish to MCP Registry
+
+# Manual trigger ONLY -- this must never run automatically. Publishing to
+# the MCP registry requires the amu-pgvector[mcp] PyPI release to already
+# exist and be installable (see submissions/mcp-registry.md), which this
+# workflow does not check for you -- run it only after confirming that by
+# hand, following submissions/release-checklist.md's order.
+#
+# mcp-publisher's GitHub OIDC login (`login github-oidc`) needs this
+# workflow to actually be the one registered as the auth method for this
+# server name on the registry side (a one-time setup step not yet done --
+# see submissions/mcp-registry.md, which currently documents the
+# interactive `login github` device-flow path instead). Until that's set
+# up, run mcp-publisher locally rather than triggering this workflow.
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install mcp-publisher
+        run: |
+          curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz" \
+            | tar xz mcp-publisher
+      - name: Validate server.json
+        run: ./mcp-publisher validate server.json
+      - name: Login (GitHub OIDC)
+        run: ./mcp-publisher login github-oidc
+      - name: Publish
+        run: ./mcp-publisher publish

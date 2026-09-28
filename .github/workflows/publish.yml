@@ -1,0 +1,48 @@
+name: Publish to PyPI
+
+# Runs only when a GitHub Release is published -- never automatically
+# otherwise. Uses PyPI trusted publishing (OIDC): no API token stored in
+# this repo. See submissions/release-checklist.md step 2 for the one-time
+# PyPI-side trusted-publisher configuration this depends on, and step 7
+# for the manual verification to do after this runs.
+#
+# Publishes amu-pgvector first, then langchain-amu, since the latter
+# depends on a pinned version of the former.
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish-amu-pgvector:
+    name: amu-pgvector
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+      - run: uv build --package amu-pgvector
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
+
+  publish-langchain-amu:
+    name: langchain-amu
+    needs: publish-amu-pgvector
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+      - run: uv build --package langchain-amu
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
