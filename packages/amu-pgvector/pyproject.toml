@@ -1,6 +1,6 @@
 [project]
 name = "amu-pgvector"
-version = "0.1.0"
+version = "0.1.1"
 description = "Reference implementation of Lineage-Aware Memory Governance on PostgreSQL + pgvector: Postgres RLS enforces S(a) subset P(d), not application code."
 readme = "README.md"
 license = { text = "MIT" }

@@ -1,6 +1,6 @@
 [project]
 name = "langchain-amu"
-version = "0.1.0"
+version = "0.1.1"
 description = "LangChain integration for amu-pgvector: a VectorStore and Retriever backed by lineage-gated Analytical Memory Units on PostgreSQL + pgvector."
 readme = "README.md"
 license = { text = "MIT" }
@@ -16,7 +16,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
-    "amu-pgvector==0.1.0",
+    "amu-pgvector==0.1.1",
     "langchain-core>=0.3",
     "numpy>=1.26",
 ]
