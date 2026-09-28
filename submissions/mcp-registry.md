@@ -1,60 +1,76 @@
-# MCP Registry publishing -- draft, NOT submitted
+# MCP Registry publishing
 
-Exact `mcp-publisher` commands and the validated `server.json` (at the repo
-root) for publishing `amu-pgvector`'s MCP server to the official MCP
-Registry (`registry.modelcontextprotocol.io`). Conventions confirmed live
-against `github.com/modelcontextprotocol/registry` on 2026-09-28 (the
-publisher quickstart and package-types docs) -- re-check before actually
-running these if much time has passed, since the registry documents itself
-as "currently in preview."
+**Published 2026-09-28**: `io.github.sangaraju1988/amu-pgvector` v0.1.1 is
+live and `status: active` --
+https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.sangaraju1988/amu-pgvector
 
-**As of 2026-09-28, `amu-pgvector` 0.1.1 is published on PyPI** (release-
-checklist.md step 7) and its live PyPI description contains the
-`mcp-name:` marker (verified via the PyPI JSON API) -- the prerequisite
-below is satisfied. Registering with the MCP registry itself
-(`mcp-publisher publish`) is still a separate, not-yet-authorized action
-(release-checklist.md step 8).
+Two real, live-API-caught issues fixed along the way (both now fixed on
+`main`, commits `6eeb741` and `878df49` -- `server.json` at the repo root
+reflects the working, published configuration):
 
-## Prerequisites already done in this repo
+1. **`description` exceeded the registry's 100-character limit.**
+   `mcp-publisher validate` caught this before any publish attempt
+   (`422: expected length <= 100 for body.description`). Shortened from
+   165 to 88 characters, same meaning.
+2. **`identifier` cannot include a PyPI extras suffix.**
+   `mcp-publisher publish` rejected `"amu-pgvector[mcp]"` with
+   `PyPI package 'amu-pgvector[mcp]' not found (status: 404)` -- the
+   registry's ownership check does a literal PyPI JSON API lookup on
+   `identifier`, and extras (`[mcp]`) are an install-time pip concept, not
+   part of a package's actual registry name. Fixed by reverting
+   `identifier` to the bare `"amu-pgvector"` and expressing the real
+   required invocation via `runtimeHint: "uvx"` +
+   `runtimeArguments: [{name: "--from", value: "amu-pgvector[mcp]==0.1.1"}]`
+   + `packageArguments: [{value: "amu-pgvector-mcp"}]` instead -- composing
+   to `uvx --from amu-pgvector[mcp]==0.1.1 amu-pgvector-mcp`, which
+   correctly installs the extra the console script's `mcp` SDK dependency
+   needs (kept optional at the base-package level so `AMUStore`/
+   `langchain-amu` users don't pull it in unnecessarily).
 
-- `packages/amu-pgvector/README.md` contains the ownership-verification
-  marker: `<!-- mcp-name: io.github.sangaraju1988/amu-pgvector -->`. Its
-  value matches `server.json`'s `name` field exactly, as required.
-- `server.json` at the repo root, `registryType: "pypi"`,
-  `identifier: "amu-pgvector[mcp]"` (the `[mcp]` extra is required for the
-  `amu-pgvector-mcp` console script to exist -- plain `amu-pgvector` alone
-  does not install it).
+## What was actually done, for the record
 
-## Commands, in order
+- `packages/amu-pgvector/README.md`'s ownership-verification marker
+  (`<!-- mcp-name: io.github.sangaraju1988/amu-pgvector -->`) was already
+  live in `amu-pgvector`'s published PyPI description (verified via the
+  PyPI JSON API) before this was attempted -- required for the registry's
+  PyPI ownership check to pass at all.
+- `mcp-publisher` installed via `brew install mcp-publisher` (1.8.1),
+  not the raw-binary download this draft originally suggested.
+- Authenticated via `mcp-publisher login github` -- GitHub OAuth device
+  flow, completed interactively (the user visited the printed URL/code;
+  this can't be done by an agent alone).
+- `mcp-publisher validate server.json` and `mcp-publisher publish` both
+  run for real against the live registry, not simulated.
+
+## Commands, for the next version
 
 ```bash
-# 1. Install mcp-publisher (macOS/Linux; see the quickstart for Windows)
-curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" \
-  | tar xz mcp-publisher
-sudo mv mcp-publisher /usr/local/bin/
+# 1. Install mcp-publisher (brew is simpler than the raw binary download
+#    the registry's own quickstart shows -- both work)
+brew install mcp-publisher
 
-# 2. Validate server.json against the schema (safe to run any time, no auth needed)
+# 2. Bump version in BOTH places in server.json: the top-level "version"
+#    and packages[0].version -- and packages[0].runtimeArguments' --from
+#    value ("amu-pgvector[mcp]==<version>"), to match the newly released
+#    PyPI version.
+
+# 3. Validate (safe to run any time, no auth needed)
 mcp-publisher validate server.json
 
-# 3. Authenticate -- GitHub OAuth device flow, since the server name is
-#    under io.github.sangaraju1988/*
+# 4. Authenticate -- GitHub OAuth device flow, since the server name is
+#    under io.github.sangaraju1988/*. Needed again if the saved token
+#    has expired; skip if still logged in.
 mcp-publisher login github
-# Follow the printed URL + device code, authorize, wait for "Successfully logged in".
+# Follow the printed URL + device code, authorize interactively --
+# an agent cannot complete this step alone.
 
-# 4. Publish (reads server.json from the current directory; the registry
-#    URL comes from the token login saved, not a flag)
+# 5. Publish (reads server.json from the current directory; the registry
+#    URL comes from the saved login token, not a flag)
 mcp-publisher publish
 
-# 5. Verify
+# 6. Verify
 curl "https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.sangaraju1988/amu-pgvector"
 ```
-
-## After publishing a new version later
-
-Bump `version` in both `server.json`'s top level and its one entry in
-`packages[].version` to match the newly released PyPI version, then repeat
-steps 2 and 4 (re-auth with `mcp-publisher login github` first if the saved
-token has expired).
 
 ## Notes
 
