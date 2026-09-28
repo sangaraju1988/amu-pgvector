@@ -155,10 +155,20 @@ AS $$
     )
 $$;
 
+-- SET jit = off: the recursive CTE below has no way for the planner to
+-- know materialization_edges/the lineage's actual row counts are tiny, so
+-- its cost estimate is wildly inflated (tens of millions of estimated
+-- rows from a couple of real ones) and crosses the JIT cost threshold on
+-- every single call -- measured at ~140ms of pure JIT compilation
+-- overhead per call (vs ~1ms of actual execution) since a SQL-language
+-- function's query isn't cached/reused across calls the way a prepared
+-- statement is. Since real execution here is trivial regardless, JIT can
+-- only ever cost time on this function, never save it.
 CREATE OR REPLACE FUNCTION amu.close_lineage(p_lineage jsonb, p_max_depth int DEFAULT 16)
 RETURNS text[]
 LANGUAGE sql
 STABLE
+SET jit = off
 AS $$
     WITH RECURSIVE base AS (
         SELECT DISTINCT

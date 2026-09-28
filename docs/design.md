@@ -231,6 +231,31 @@ correct on paper but isn't:
   `if not self.has_async: pytest.skip(...)` guard at all -- in `strict`
   mode (the plugin's default), an unmarked `async def` test isn't invoked
   as a coroutine in the first place, so it errors before that guard runs.
+- **`close_lineage()` JIT compilation overhead, found while writing the
+  latency benchmark's data-seeding path.** A single `INSERT` was taking
+  ~147ms — measured with `EXPLAIN ANALYZE`, almost all of it was
+  `Trigger trg_compute_lineage_fields: time=146.986`. Isolating further,
+  `close_lineage()` alone cost ~140ms per call regardless of how trivial
+  the input (one step, one column, an empty `materialization_edges`
+  table). The recursive CTE gives the planner nothing to estimate real
+  cardinality from, so it falls back to a generic recursive-CTE cost
+  heuristic that assumes exponential per-level growth -- the plan's own
+  row estimates were in the tens of millions for an actual output of one
+  row. That inflated cost crosses Postgres's JIT thresholds, so every
+  single call re-runs LLVM JIT compilation of the query (confirmed via
+  `EXPLAIN (ANALYZE)`'s own `JIT: ... Total 131ms` line), and a
+  `LANGUAGE sql` function's internal query isn't cached across separate
+  calls the way a prepared statement would be -- so this cost was being
+  paid on **every AMU write**, not just in a pathological case. Fixed with
+  `SET jit = off` on `close_lineage()` itself: real execution is
+  sub-millisecond regardless, so JIT could only ever cost time here, never
+  save it. Confirmed via the same `EXPLAIN ANALYZE INSERT`: 147ms -> 1.9ms
+  per row (~75x), and the whole pytest suite's wall-clock time dropped
+  from ~21s to ~4s as a side effect. This was found by actually trying to
+  seed a 10k-row benchmark dataset and watching a `COPY` sit for 7+
+  minutes with 0 rows landed -- exactly the kind of thing the "never
+  invent numbers, always run the actual benchmark" ground rule catches
+  that a synthetic/mocked test never would have.
 - **Cross-package test fixture reuse.** `packages/langchain-amu/tests/`
   loads `packages/amu-pgvector/tests/conftest.py` via `importlib` under an
   explicit distinct module name (both files share the basename `conftest`,
