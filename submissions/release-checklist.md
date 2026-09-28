@@ -1,26 +1,44 @@
-# Release checklist -- draft, nothing here has been done
+# Release checklist
 
 Order matters: several steps depend on an earlier one having actually
 completed (PyPI trusted publishing needs the repo public; the MCP registry
 publish needs the PyPI release to exist and be readable; the LangChain
 listing form requires the package to already be on PyPI). Each step below
-is a decision or action the project owner needs to take explicitly --
-nothing in this file has been executed, and nothing should be executed
-without going through this list in order.
+is a decision or action the project owner needs to take explicitly.
 
-- [ ] **1. Make the repo public.** `gh repo edit sangaraju1988/amu-pgvector --visibility public --accept-visibility-change-consequences` (or via the GitHub UI: Settings → General → Danger Zone → Change visibility). Irreversible in the sense that anything ever pushed becomes visible in history; review the repo one more time first, in particular that no `.env`/credentials/DSNs with real passwords ever got committed (the docker-compose and test credentials in this repo are all fixed, non-secret dev-only values, but double check before flipping this).
+- [x] **1. Make the repo public.** Done 2026-09-28 via `gh repo edit sangaraju1988/amu-pgvector --visibility public --accept-visibility-change-consequences`.
 
-- [ ] **2. Configure PyPI trusted publishing for both packages.** On pypi.org, for each of `amu-pgvector` and `langchain-amu`: Account settings → Publishing → add a new pending publisher, GitHub Actions, owner `sangaraju1988`, repo `amu-pgvector`, workflow filename (a new `.github/workflows/publish.yml` needs to be added -- not yet written; the current `ci.yml` only tests/lints), environment name of your choosing. This has to happen before the first trusted-publish run, and needs the repo to already be public (step 1) since PyPI's OIDC trust verifies against the public repo.
+- [x] **2. Configure PyPI trusted publishing for both packages.** Done 2026-09-28. Two **pending publishers** registered at `pypi.org/manage/account/publishing/` (the project doesn't exist yet, so this is the "pending" flow, not the per-project one):
 
-- [ ] **3. Tag `v0.1.0`.** `git tag -a v0.1.0 -m "..."` and push the tag. Decide first whether both packages release together at the same version number (simpler) or independently (more flexible, more bookkeeping) -- this repo's `pyproject.toml` files currently both say `0.1.0` with no independent versioning scheme set up.
+  | PyPI project | Repo | Workflow | Environment |
+  |---|---|---|---|
+  | `amu-pgvector` | `sangaraju1988/amu-pgvector` | `publish.yml` | `pypi-amu-pgvector` |
+  | `langchain-amu` | `sangaraju1988/amu-pgvector` | `publish.yml` | `pypi-langchain-amu` |
 
-- [ ] **4. Create the GitHub Release from that tag.** This is what triggers Zenodo's GitHub integration (once connected, see next step) to mint a DOI automatically. Write real release notes -- don't let GitHub's auto-generated commit list stand alone as the release description.
+  **Found while doing this**: PyPI keys a trusted-publisher config on
+  `(repo, workflow, environment)` → exactly one PyPI project name. The
+  first `.github/workflows/publish.yml` draft used the *same* `pypi`
+  environment for both jobs, so registering the second pending publisher
+  failed with "A pending trusted publisher matching this configuration has
+  already been registered for a different project name." Fixed by giving
+  each job its own environment (`pypi-amu-pgvector` / `pypi-langchain-amu`,
+  commit `cf88ef3`) — if you're publishing more than one PyPI project from
+  one workflow file, each job needs a distinct `environment:`, full stop.
+  The two matching GitHub Actions environments were created via
+  `gh api --method PUT repos/.../environments/<name>` (they don't need any
+  protection rules configured — trusted publishing works from a
+  bare environment with no reviewers/branch restrictions, though adding
+  those is good practice if you want a human gate on publishing later).
+
+- [x] **3. Tag `v0.1.0`.** Done 2026-09-28 (annotated tag, pushed).
+
+- [x] **4. Create the GitHub Release from that tag.** Done 2026-09-28, real release notes (not the auto-generated commit list): https://github.com/sangaraju1988/amu-pgvector/releases/tag/v0.1.0. Publishing it auto-triggered `publish.yml` (it fires on any `release: published`) — that run failed fast and safely with "Trusted publishing exchange failure: invalid-publisher" since step 2 hadn't been done yet at that point; no upload was attempted. Step 2 is now fixed and correctly configured, but the `v0.1.0` tag still points at the *old*, buggy `publish.yml` (the fix landed in a later commit, `cf88ef3`) — **the existing v0.1.0 release's workflow run cannot be successfully re-run as-is**. The next release (or a re-tag) will pick up the fix automatically.
 
 - [ ] **5. Confirm the Zenodo DOI.** Requires the Zenodo GitHub integration to already be enabled for this repo (zenodo.org → GitHub → toggle the repo on) *before* step 4's release is created -- Zenodo archives releases going forward, not retroactively. If the integration wasn't enabled before the v0.1.0 release, either enable it now and do a `v0.1.1` release to get the first archived DOI, or manually upload the v0.1.0 source to Zenodo. Once a DOI exists, update `CITATION.cff` (add a `doi:` field to the software entry, which is currently and deliberately absent since no DOI exists yet) and `.zenodo.json` if any metadata drifted.
 
 - [ ] **6. Update the DOI badge in the README.** Add `[![DOI](https://zenodo.org/badge/DOI/<the-real-doi>.svg)](https://doi.org/<the-real-doi>)` near the top of `README.md`, using the actual DOI from step 5 -- never a placeholder.
 
-- [ ] **7. Run the actual `uv build` + `twine upload` (or the new trusted-publish workflow) for both packages**, in dependency order: `amu-pgvector` first (since `langchain-amu` depends on it by pinned version), then `langchain-amu`. Confirm both install cleanly from PyPI in a fresh venv (`pip install amu-pgvector[mcp,st]` and `pip install langchain-amu`) before moving on.
+- [ ] **7. Publish both packages via the trusted-publish workflow.** Trusted publishing (OIDC, step 2) is the intended route — no PyPI API token exists anywhere in this repo, deliberately. Since `v0.1.0`'s tag predates the environment-name fix (step 2's note), publishing needs a **new** release: either re-tag `v0.1.0` to point at `cf88ef3` or later and delete+recreate the release, or just cut `v0.1.1`. Either way, publishing that release fires `publish.yml`, which builds `amu-pgvector` then `langchain-amu` in dependency order (the latter needs the former's pinned version). Watch both jobs in the Actions tab; confirm success, then confirm both install cleanly from PyPI in a fresh venv (`pip install amu-pgvector[mcp,st]` and `pip install langchain-amu`) before moving on.
 
 - [ ] **8. Publish to the MCP registry.** Follow `submissions/mcp-registry.md` exactly -- it depends on step 7 (PyPI `amu-pgvector[mcp]` must exist) and on `packages/amu-pgvector/README.md`'s `mcp-name:` marker matching `server.json`'s `name` field, which it already does as of this draft; just re-verify nothing renamed one without the other in the meantime.
 

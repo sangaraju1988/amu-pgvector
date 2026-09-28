@@ -272,3 +272,24 @@ correct on paper but isn't:
   connection instead of the ephemeral owner role, since a stale role
   created by a *different* instance's owner isn't one this instance has
   ADMIN OPTION over.
+
+## Release-time finding: PyPI trusted publishing needs one environment per project
+
+`.github/workflows/publish.yml` originally used the same `environment:
+pypi` for both the `amu-pgvector` and `langchain-amu` jobs. Registering
+PyPI's first pending trusted publisher (for `amu-pgvector`) worked fine;
+registering the second (`langchain-amu`, same repo, same workflow file,
+same environment name) was rejected: "A pending trusted publisher matching
+this configuration has already been registered for a different project
+name." PyPI keys a trusted-publisher configuration on the tuple `(repo,
+workflow, environment)` → exactly one PyPI project name — publishing two
+different projects from jobs in the same workflow file requires each job
+to use its own `environment:` name. Fixed in commit `cf88ef3`
+(`pypi-amu-pgvector` / `pypi-langchain-amu`); see
+`submissions/release-checklist.md` step 2 for the exact registered
+configuration. A GitHub Actions `environment:` referenced by a workflow
+job is auto-created by GitHub the first time that job runs even if it
+fails, but was also created explicitly ahead of time here via
+`gh api --method PUT repos/.../environments/<name>` — no protection rules
+needed for trusted publishing to work, though adding a required reviewer
+is worth considering if you want a human approval gate on actual releases.
