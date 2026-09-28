@@ -46,6 +46,9 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
 
+      - name: Ensure psql client is available
+        run: command -v psql || sudo apt-get update && sudo apt-get install -y --no-install-recommends postgresql-client
+
       - name: Sync workspace
         run: uv sync --all-packages --all-extras
 
@@ -60,7 +63,13 @@ jobs:
           psql -c "CREATE ROLE ci_owner LOGIN PASSWORD 'ci_owner_password' CREATEROLE;"
           psql -c "GRANT ALL ON DATABASE amu_dev TO ci_owner;"
           psql -c "ALTER DATABASE amu_dev OWNER TO ci_owner;"
-          PGUSER=ci_owner PGPASSWORD=ci_owner_password psql -v ON_ERROR_STOP=1 -f sql/amu_pgvector.sql
+          # Plain pgvector isn't a "trusted" extension, so creating it needs
+          # superuser -- exactly like Supabase/Neon, which pre-install it
+          # for every project so the app owner never has to. Reproduce that
+          # pre-provisioned state instead of running the suite as superuser.
+          psql -c "CREATE EXTENSION IF NOT EXISTS vector;"
+          PGUSER=ci_owner PGPASSWORD=ci_owner_password psql -v ON_ERROR_STOP=1 \
+            -v embedding_dim=1536 -v convenience_mode_enabled=off -f sql/amu_pgvector.sql
 
       - name: Run tests
         env:
@@ -86,6 +95,8 @@ jobs:
           --health-retries 10
     steps:
       - uses: actions/checkout@v4
+      - name: Ensure psql client is available
+        run: command -v psql || sudo apt-get update && sudo apt-get install -y --no-install-recommends postgresql-client
       - name: Apply schema twice (idempotency check)
         env:
           PGHOST: localhost

@@ -134,3 +134,53 @@ for the authoritative, exhaustive version.)*
 | `Lineage.definition_hash()` | `amu.memory_units.definition_hash` (computed client-side via `amu_governance`, stored, format-validated) |
 | `LineageAwareSystem.request()` gate (`S(a) ⊆ P(d)`) | RLS `SELECT` policy: `sensitive_columns <@ amu.permitted_columns()` |
 | Materialized/derived-table lineage expansion | `amu.materialization_edges` + `amu.close_lineage()` |
+
+## Phase 2 implementation notes
+
+A few decisions made while building and testing `sql/amu_pgvector.sql` against
+a real Postgres (docker-compose, `pgvector/pgvector:pg17`), worth recording
+so they don't get "fixed" back to something that looks more obviously
+correct on paper but isn't:
+
+- **Owner bypass under FORCE ROW LEVEL SECURITY.** `memory_units` uses
+  `FORCE ROW LEVEL SECURITY`, so even the table owner needs an explicit
+  policy. Rather than hardcode a role name (which varies per deployment --
+  `postgres` locally, `neondb_owner` on Neon, a project-specific name on
+  Supabase), the owner policy is `TO CURRENT_USER`: Postgres resolves
+  `CURRENT_USER`/`CURRENT_ROLE` in a policy's `TO` clause **at
+  `CREATE POLICY` time**, so it's baked in as whichever role runs the install
+  script, with no hardcoding needed.
+- **Closure is append-only, never subtractive.** `amu.close_lineage()`
+  expands a derived table's columns to their mapped source columns, but
+  never removes the derived table's own column name from the touched-column
+  set -- even once it's been successfully mapped. This mirrors
+  `sql_lineage.extract_lineage_from_sql`'s "unknown bucket, never dropped"
+  philosophy: closure can only make the sensitivity check *more*
+  conservative, never less.
+- **pgvector needs superuser to install, on plain Postgres.** Vanilla
+  `pgvector/pgvector` images don't mark `vector` as a "trusted" extension, so
+  `CREATE EXTENSION vector` needs superuser there -- exactly the gap that
+  Supabase/Neon close by pre-installing it for every project. The install
+  script's own `CREATE EXTENSION IF NOT EXISTS vector` is written to be a
+  true no-op when it's already present (verified: a non-superuser owner can
+  run it against an already-installed extension without error), so CI and
+  local dev pre-create it via the superuser bootstrap connection, matching
+  what managed Postgres already does for real users.
+- **`amu.search()`'s `vector` parameter needs an explicit cast at the call
+  site.** `%s::vector` in the SQL text, not just `%s` -- psycopg/pgvector's
+  `register_vector()` only gets the parameter's target type for free when
+  it's assigned into a table column (e.g. a plain `INSERT`); a bare function
+  argument position needs the cast spelled out or Postgres resolves the
+  parameter as `double precision[]` and fails to find an overload. The
+  Python client (Phase 3) must do this.
+- **`amu_writer`/`amu_agent_base` are cluster-global role names**, like every
+  Postgres role. Installing amu-pgvector into a second database on the same
+  cluster reuses the same two role names rather than creating independent
+  ones -- fine for the common "one amu-pgvector install per cluster" case,
+  but worth knowing if you're running it in more than one database on one
+  Postgres instance: the second install's `IF NOT EXISTS` guard skips
+  creating them, and only the first installer's owner role gets the
+  automatic `ADMIN OPTION` Postgres grants on role creation. (The test suite
+  hits this directly, since it spins up multiple ephemeral databases against
+  one shared Postgres instance per session -- see
+  `packages/amu-pgvector/tests/conftest.py`'s `_grant_admin_on_shared_roles`.)
