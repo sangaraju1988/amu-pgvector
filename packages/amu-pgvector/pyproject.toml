@@ -1,0 +1,44 @@
+[project]
+name = "amu-pgvector"
+version = "0.1.0"
+description = "Reference implementation of Lineage-Aware Memory Governance on PostgreSQL + pgvector: Postgres RLS enforces S(a) subset P(d), not application code."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+authors = [{ name = "Venkata Sangaraju" }]
+keywords = ["postgres", "pgvector", "rls", "row-level-security", "agent-memory", "lineage", "governance", "rag"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Database",
+    "Topic :: Security",
+]
+dependencies = [
+    "amu-governance==0.1.2",
+    "psycopg[binary]>=3.1",
+    "pgvector>=0.3",
+]
+
+[project.optional-dependencies]
+mcp = ["mcp>=1.2"]
+st = ["sentence-transformers>=3.0"]
+async = ["psycopg[binary,pool]>=3.1"]
+
+[project.scripts]
+amu-pgvector-mcp = "amu_pgvector.mcp_server:main"
+
+[project.urls]
+Homepage = "https://github.com/sangaraju1988/amu-pgvector"
+Repository = "https://github.com/sangaraju1988/amu-pgvector"
+Paper = "https://doi.org/10.1109/ACCESS.2026.3730363"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/amu_pgvector"]

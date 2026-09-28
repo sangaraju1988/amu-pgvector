@@ -1,0 +1,98 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: pg${{ matrix.pg }} / py${{ matrix.python }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - pg: "16"
+            python: "3.10"
+          - pg: "16"
+            python: "3.12"
+          - pg: "17"
+            python: "3.10"
+          - pg: "17"
+            python: "3.12"
+          - pg: "18"
+            python: "3.12"
+    services:
+      postgres:
+        image: pgvector/pgvector:pg${{ matrix.pg }}
+        env:
+          POSTGRES_USER: amu_owner
+          POSTGRES_PASSWORD: amu_owner_password
+          POSTGRES_DB: amu_dev
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U amu_owner -d amu_dev"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Sync workspace
+        run: uv sync --all-packages --all-extras
+
+      - name: Install schema as non-superuser owner role
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: amu_owner
+          PGPASSWORD: amu_owner_password
+          PGDATABASE: amu_dev
+        run: |
+          psql -c "CREATE ROLE ci_owner LOGIN PASSWORD 'ci_owner_password' CREATEROLE;"
+          psql -c "GRANT ALL ON DATABASE amu_dev TO ci_owner;"
+          psql -c "ALTER DATABASE amu_dev OWNER TO ci_owner;"
+          PGUSER=ci_owner PGPASSWORD=ci_owner_password psql -v ON_ERROR_STOP=1 -f sql/amu_pgvector.sql
+
+      - name: Run tests
+        env:
+          AMU_TEST_DSN: postgresql://amu_owner:amu_owner_password@localhost:5432/amu_dev
+        run: uv run pytest -v
+
+  sql-lint:
+    name: shellcheck / sql idempotency smoke test
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: amu_owner
+          POSTGRES_PASSWORD: amu_owner_password
+          POSTGRES_DB: amu_dev
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U amu_owner -d amu_dev"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply schema twice (idempotency check)
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: amu_owner
+          PGPASSWORD: amu_owner_password
+          PGDATABASE: amu_dev
+        run: |
+          psql -v ON_ERROR_STOP=1 -f sql/amu_pgvector.sql
+          psql -v ON_ERROR_STOP=1 -f sql/amu_pgvector.sql

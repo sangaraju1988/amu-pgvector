@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_USER: amu_owner
+      POSTGRES_PASSWORD: amu_owner_password
+      POSTGRES_DB: amu_dev
+    ports:
+      - "5433:5432"
+    volumes:
+      - amu_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U amu_owner -d amu_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  amu_pgdata:
