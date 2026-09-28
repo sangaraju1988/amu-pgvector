@@ -1,8 +1,16 @@
 # MCP Registry publishing
 
-**Published 2026-09-28**: `io.github.sangaraju1988/amu-pgvector` v0.1.1 is
-live and `status: active` --
+**Published 2026-09-28, current version 0.1.2**:
+`io.github.sangaraju1988/amu-pgvector` is live, `status: active`,
+`isLatest: true` at 0.1.2 (0.1.1 stays listed as prior history, not
+`isLatest`, which is correct registry behavior -- versions aren't
+overwritten) --
 https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.sangaraju1988/amu-pgvector
+
+Republishing an updated version needs a **fresh** `mcp-publisher login
+github` first -- the saved JWT expires (hit this directly: a `publish`
+run after some hours failed with `401: token is expired`, fixed with a
+plain re-login, no other change needed).
 
 Two real, live-API-caught issues fixed along the way (both now fixed on
 `main`, commits `6eeb741` and `878df49` -- `server.json` at the repo root
