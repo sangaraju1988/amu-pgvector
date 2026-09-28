@@ -7,19 +7,19 @@
     "url": "https://github.com/sangaraju1988/amu-pgvector",
     "source": "github"
   },
-  "version": "0.1.2",
+  "version": "0.1.3",
   "packages": [
     {
       "registryType": "pypi",
       "registryBaseUrl": "https://pypi.org",
       "identifier": "amu-pgvector",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "runtimeHint": "uvx",
       "runtimeArguments": [
         {
           "type": "named",
           "name": "--from",
-          "value": "amu-pgvector[mcp]==0.1.2",
+          "value": "amu-pgvector[mcp]==0.1.3",
           "description": "Installs with the [mcp] extra, required for the amu-pgvector-mcp console script's mcp SDK dependency (it's optional at the base-package level so the Python client and LangChain integration don't pull it in unnecessarily)."
         }
       ],

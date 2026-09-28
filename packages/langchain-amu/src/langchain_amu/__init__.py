@@ -3,6 +3,6 @@
 from langchain_amu.retriever import AMURetriever
 from langchain_amu.vectorstore import AMUVectorStore
 
-__version__ = "0.1.2"
+__version__ = "0.1.3"
 
 __all__ = ["AMUVectorStore", "AMURetriever"]
