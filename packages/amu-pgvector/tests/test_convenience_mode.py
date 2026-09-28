@@ -12,8 +12,6 @@ import subprocess
 
 import psycopg
 import pytest
-from psycopg import sql
-
 from conftest import (
     ADMIN_DSN,
     SQL_FILE,
@@ -23,6 +21,7 @@ from conftest import (
     _pg_env,
     _psql_path,
 )
+from psycopg import sql
 
 
 @pytest.fixture(scope="module")

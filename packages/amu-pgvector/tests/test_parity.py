@@ -13,7 +13,6 @@ from __future__ import annotations
 import psycopg
 import pytest
 from amu_governance import AMU, GovernancePolicy, Lineage, LineageAwareSystem, LineageStep
-
 from conftest import insert_amu
 
 POLICY = GovernancePolicy(
