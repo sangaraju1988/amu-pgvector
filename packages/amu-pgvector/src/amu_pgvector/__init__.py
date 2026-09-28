@@ -9,6 +9,6 @@ schema and docs/design.md for how each paper concept maps to a SQL object.
 from amu_pgvector.models import Conflict, RecordResult, SearchResult
 from amu_pgvector.store import AMUStore
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 
 __all__ = ["AMUStore", "Conflict", "RecordResult", "SearchResult"]
