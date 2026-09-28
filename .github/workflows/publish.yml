@@ -8,6 +8,13 @@ name: Publish to PyPI
 #
 # Publishes amu-pgvector first, then langchain-amu, since the latter
 # depends on a pinned version of the former.
+#
+# Each job uses its OWN environment name (pypi-amu-pgvector /
+# pypi-langchain-amu), not a shared "pypi" one: PyPI's trusted-publisher
+# config is keyed on (repo, workflow, environment) -> exactly one PyPI
+# project name, so two jobs in the same workflow publishing two different
+# projects need two different environment names, or PyPI refuses the
+# second one as "already registered for a different project name".
 
 on:
   release:
@@ -17,7 +24,7 @@ jobs:
   publish-amu-pgvector:
     name: amu-pgvector
     runs-on: ubuntu-latest
-    environment: pypi
+    environment: pypi-amu-pgvector
     permissions:
       id-token: write
     steps:
@@ -34,7 +41,7 @@ jobs:
     name: langchain-amu
     needs: publish-amu-pgvector
     runs-on: ubuntu-latest
-    environment: pypi
+    environment: pypi-langchain-amu
     permissions:
       id-token: write
     steps:
