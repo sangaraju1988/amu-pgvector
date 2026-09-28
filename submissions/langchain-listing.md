@@ -2,12 +2,13 @@
 
 Draft answers for the `langchain-ai/docs` "Integration listing" issue form
 (`.github/ISSUE_TEMPLATE/06-integration-submission.yml`, fetched live on
-2026-09-28). Per that form's own instructions: **file this only after
-`langchain-amu` is published on PyPI** -- the form's confirmation checkbox
-requires it, and a maintainer generates the actual docs PR from these
-fields via automation, not from a manual PR. See
-`submissions/release-checklist.md` for where this fits in the release
-order.
+2026-09-28). Per that form's own instructions, filing requires the package
+to already be published on PyPI -- **as of 2026-09-28, `langchain-amu`
+0.1.1 is live at https://pypi.org/project/langchain-amu/**, so that
+prerequisite is satisfied. This issue has still not been filed -- that's
+release-checklist.md step 9, a separate, not-yet-authorized action. A
+maintainer generates the actual docs PR from these fields via automation,
+not from a manual PR.
 
 To file for real: open a new issue at
 `https://github.com/langchain-ai/docs/issues/new?template=06-integration-submission.yml`
@@ -71,8 +72,9 @@ Streaming/tool-calling flags don't apply to a vector store. Left
 form's "omit unknown flags" instruction, rather than guessing.)
 
 **Confirmations**
-- [ ] The package is already published on PyPI and/or npm.
-  **Not yet checked -- do not file until `langchain-amu` is on PyPI.**
+- [x] The package is already published on PyPI and/or npm.
+  `langchain-amu` 0.1.1 is live on PyPI as of 2026-09-28 -- check this box
+  for real when actually filing.
 
 ## Notes for whoever files this
 

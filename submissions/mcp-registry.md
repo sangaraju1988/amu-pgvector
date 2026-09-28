@@ -8,11 +8,12 @@ publisher quickstart and package-types docs) -- re-check before actually
 running these if much time has passed, since the registry documents itself
 as "currently in preview."
 
-**Do not run any of this until `amu-pgvector` (with the `[mcp]` extra) is
-published on PyPI.** The registry's PyPI ownership-verification step reads
-the `mcp-name:` line from the *published* package's README (its PyPI
-"description" rendering), so publishing to the registry before the PyPI
-release exists cannot succeed.
+**As of 2026-09-28, `amu-pgvector` 0.1.1 is published on PyPI** (release-
+checklist.md step 7) and its live PyPI description contains the
+`mcp-name:` marker (verified via the PyPI JSON API) -- the prerequisite
+below is satisfied. Registering with the MCP registry itself
+(`mcp-publisher publish`) is still a separate, not-yet-authorized action
+(release-checklist.md step 8).
 
 ## Prerequisites already done in this repo
 
