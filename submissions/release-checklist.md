@@ -42,7 +42,7 @@ is a decision or action the project owner needs to take explicitly.
 
 - [ ] **8. Publish to the MCP registry.** Follow `submissions/mcp-registry.md` exactly -- it depends on step 7 (PyPI `amu-pgvector[mcp]` must exist) and on `packages/amu-pgvector/README.md`'s `mcp-name:` marker matching `server.json`'s `name` field, which it already does as of this draft; just re-verify nothing renamed one without the other in the meantime.
 
-- [ ] **9. File the LangChain listing issue.** Follow `submissions/langchain-listing.md`, using the live issue-form template at the time of filing (re-fetch it -- the form's fields may have changed since this draft was written on 2026-09-28). Depends on step 7 (`langchain-amu` must already be on PyPI; the form's confirmation checkbox requires it).
+- [x] **9. File the LangChain listing issue.** Done 2026-09-28: https://github.com/langchain-ai/docs/issues/6276. Re-fetched the live issue-form template immediately before filing (unchanged). Now waiting on a maintainer to review and apply `integration-run` to trigger the docs-PR automation -- nothing further to do on this end unless they ask for changes.
 
 - [ ] **10. (Optional, any time after step 1) File the awesome-list PRs.** `submissions/awesome-lists.md` has both entries drafted. Not order-dependent on the PyPI/MCP/LangChain steps, but do it after the repo is public (step 1) -- a link to a private repo is useless there.
 

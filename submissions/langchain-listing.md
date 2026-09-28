@@ -1,18 +1,16 @@
-# LangChain integration listing -- draft, NOT submitted
+# LangChain integration listing
 
-Draft answers for the `langchain-ai/docs` "Integration listing" issue form
-(`.github/ISSUE_TEMPLATE/06-integration-submission.yml`, fetched live on
-2026-09-28). Per that form's own instructions, filing requires the package
-to already be published on PyPI -- **as of 2026-09-28, `langchain-amu`
-0.1.1 is live at https://pypi.org/project/langchain-amu/**, so that
-prerequisite is satisfied. This issue has still not been filed -- that's
-release-checklist.md step 9, a separate, not-yet-authorized action. A
-maintainer generates the actual docs PR from these fields via automation,
-not from a manual PR.
+**Filed 2026-09-28: https://github.com/langchain-ai/docs/issues/6276**
 
-To file for real: open a new issue at
-`https://github.com/langchain-ai/docs/issues/new?template=06-integration-submission.yml`
-and paste in the fields below.
+Re-verified the live issue form (`.github/ISSUE_TEMPLATE/06-integration-
+submission.yml`) immediately before filing -- unchanged since it was
+first drafted, same day. Filed via `gh issue create` with a body matching
+the form's own rendered field structure exactly. Submitter-supplied
+`integration-submission`/`integration` labels didn't take (external
+contributors can't apply labels on this repo) -- expected, and the form's
+own text says a maintainer applies `integration-run` during review anyway.
+
+Fields below are what was actually submitted, kept for reference.
 
 ## Form fields
 
@@ -73,8 +71,7 @@ form's "omit unknown flags" instruction, rather than guessing.)
 
 **Confirmations**
 - [x] The package is already published on PyPI and/or npm.
-  `langchain-amu` 0.1.1 is live on PyPI as of 2026-09-28 -- check this box
-  for real when actually filing.
+  `langchain-amu` 0.1.1 was live on PyPI at filing time.
 
 ## Notes for whoever files this
 
