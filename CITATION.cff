@@ -6,6 +6,7 @@ authors:
     given-names: Venkata
 version: 0.1.3
 date-released: 2026-09-28
+doi: 10.5281/zenodo.23025850
 repository-code: "https://github.com/sangaraju1988/amu-pgvector"
 license: MIT
 type: software

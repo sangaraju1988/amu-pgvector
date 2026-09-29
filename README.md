@@ -1,5 +1,7 @@
 # amu-pgvector
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23025849.svg)](https://doi.org/10.5281/zenodo.23025849)
+
 Reference implementation of **Lineage-Aware Memory Governance**
 (Sangaraju & Vissa, *IEEE Access*, [10.1109/ACCESS.2026.3730363](https://doi.org/10.1109/ACCESS.2026.3730363))
 on PostgreSQL + [pgvector](https://github.com/pgvector/pgvector).
