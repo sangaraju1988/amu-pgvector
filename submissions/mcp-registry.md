@@ -1,11 +1,18 @@
 # MCP Registry publishing
 
-**Published 2026-09-28, current version 0.1.2**:
+**Re-synced 2026-09-30, current version 0.1.3**:
 `io.github.sangaraju1988/amu-pgvector` is live, `status: active`,
-`isLatest: true` at 0.1.2 (0.1.1 stays listed as prior history, not
-`isLatest`, which is correct registry behavior -- versions aren't
-overwritten) --
+`isLatest: true` at 0.1.3 (0.1.1 and 0.1.2 both stay listed as prior
+history, not `isLatest`, which is correct registry behavior -- versions
+aren't overwritten) --
 https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.sangaraju1988/amu-pgvector
+-- verified via that API directly, not just the CLI's own success message.
+
+The saved JWT had expired again by the time this re-sync was done (a day
+after the *previous* re-login, not just "hours" as noted below) -- this
+really does expire between essentially any two sessions with real time
+between them; always attempt `publish` first and only re-login on a 401,
+never assume a prior login is still valid.
 
 Republishing an updated version needs a **fresh** `mcp-publisher login
 github` first -- the saved JWT expires (hit this directly: a `publish`
