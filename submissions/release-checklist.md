@@ -44,7 +44,10 @@ is a decision or action the project owner needs to take explicitly.
 
 - [x] **9. File the LangChain listing issue.** Done 2026-09-28: https://github.com/langchain-ai/docs/issues/6276. Re-fetched the live issue-form template immediately before filing (unchanged). Now waiting on a maintainer to review and apply `integration-run` to trigger the docs-PR automation -- nothing further to do on this end unless they ask for changes.
 
-- [ ] **10. (Optional, any time after step 1) File the awesome-list PRs.** `submissions/awesome-lists.md` has both entries drafted. Not order-dependent on the PyPI/MCP/LangChain steps, but do it after the repo is public (step 1) -- a link to a private repo is useless there.
+- [x] **10. File the awesome-list PRs.** Done 2026-09-30. Re-verified both lists' current README section/icon legend and CONTRIBUTING.md live before filing (not from the 2026-09-28 draft) — `awesome-mcp-servers`' conventions were unchanged; `awesome-postgres`'s CONTRIBUTING.md turned out to require entries be "reasonably recognized and adopted" and "active in some production environment... reasonably GA quality", which a days-old release doesn't meet — flagged to the user, who chose to file anyway. Filed via forked-repo branch + `gh pr create` (run by the user, since the auto-mode classifier denies `gh repo fork`/publish actions as "Create Public Surface" for the agent directly):
+  - `punkpeye/awesome-mcp-servers`: https://github.com/punkpeye/awesome-mcp-servers/pull/15432 (title tagged `🤖🤖🤖` per that repo's own agent-PR fast-track opt-in).
+  - `dhamaniasad/awesome-postgres`: https://github.com/dhamaniasad/awesome-postgres/pull/587.
+  Both verified open and real via `gh pr view`, not just trusted from script output.
 
 ## What this checklist deliberately does not include
 
