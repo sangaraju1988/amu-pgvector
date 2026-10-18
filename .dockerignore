@@ -1,0 +1,11 @@
+.git
+.github
+results
+benchmarks
+submissions
+docs
+examples
+**/__pycache__
+**/.pytest_cache
+.venv
+uv.lock
