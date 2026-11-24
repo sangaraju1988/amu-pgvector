@@ -1,6 +1,7 @@
 # amu-pgvector
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23025849.svg)](https://doi.org/10.5281/zenodo.23025849)
+[![sangaraju1988/amu-pgvector MCP server](https://glama.ai/mcp/servers/sangaraju1988/amu-pgvector/badges/score.svg)](https://glama.ai/mcp/servers/sangaraju1988/amu-pgvector)
 
 Reference implementation of **Lineage-Aware Memory Governance**
 (Sangaraju & Vissa, *IEEE Access*, [10.1109/ACCESS.2026.3730363](https://doi.org/10.1109/ACCESS.2026.3730363))
